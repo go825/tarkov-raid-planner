@@ -11,6 +11,8 @@ export const raidPlans = sqliteTable("raid_plans", {
   ownerName: text("owner_name").notNull().default("Owner"),
   ownerReady: integer("owner_ready", {mode:"boolean"}).notNull().default(false),
   revision: integer("revision").notNull().default(1),
+  checklistState: text("checklist_state").notNull().default("{}"),
+  assignments: text("assignments").notNull().default("{}"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
@@ -31,6 +33,7 @@ export const planMembers = sqliteTable("plan_members", {
 export const playerProfiles = sqliteTable("player_profiles", {
   userId: text("user_id").primaryKey(),
   faction: text("faction").notNull().default("pmc"),
+  playerLevel: integer("player_level").notNull().default(1),
   keyIds: text("key_ids").notNull().default("[]"),
   allowPowered: integer("allow_powered", {mode:"boolean"}).notNull().default(false),
   allowConditionalExtracts: integer("allow_conditional_extracts", {mode:"boolean"}).notNull().default(false),
