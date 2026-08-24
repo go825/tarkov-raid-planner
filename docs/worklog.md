@@ -4,7 +4,7 @@
 
 ## 2026-08-24
 
-### Phase 12 — My Tasks・タスク進行管理（進行中）
+### Phase 12 — My Tasks・タスク進行管理（完了）
 
 - [x] My Tasks画面とPvP／PvE切替を追加。
 - [x] Task／Objective進行状態をD1とlocalStorageへ保存。
@@ -12,7 +12,7 @@
 - [x] 受注中・未完了ObjectiveだけをRaid Plan候補へ反映。
 - [x] Squad共有プラン上でTask所有者と担当者を区別。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] GitHubと公開サイトを更新。
+- [x] GitHubと公開サイトを更新。
 
 #### Phase 12 メモ
 
@@ -21,6 +21,8 @@
 - 進行管理を開始するまでは従来どおり全候補を表示し、開始後はACTIVEかつ未完了ObjectiveだけをRaid Planへ出す。
 - 共有プランのTask所有者はObjective単位で保持し、チェックリストの作業担当とは別フィールドで同期する。
 - ESLintエラー0件、本番ビルド成功、自動テスト14件成功。
+- Sites v13を本番へデプロイし、D1の`task_progress`テーブルを確認。
+- 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
 ### Phase 11 — Phase 0仕様差分の解消（完了・外部確認ゲートあり）
 
