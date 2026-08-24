@@ -17,12 +17,12 @@ export async function GET(request: Request) {
   try {
     const payload = await getTarkovTasks(requestedMode as GameMode, locale);
     const tasks = mapFilter
-      ? payload.tasks.filter((task) => task.objectives.some((objective: any) =>
-          objective.maps.some((map: any) => map.id?.toLowerCase() === mapFilter || map.name?.toLowerCase() === mapFilter),
+      ? payload.tasks.filter((task) => task.objectives.some((objective) =>
+          objective.maps.some((map) => map.id?.toLowerCase() === mapFilter || map.name?.toLowerCase() === mapFilter),
         ))
       : payload.tasks;
     return Response.json(
-      { data: tasks.slice(0, limit), meta: { ...payload.meta, total: tasks.length, limit } },
+      { data: tasks.slice(0, limit), map: mapFilter ? payload.maps.find((entry) => entry.id?.toLowerCase() === mapFilter || entry.name?.toLowerCase() === mapFilter) ?? null : null, meta: { ...payload.meta, total: tasks.length, limit } },
       { headers: { "cache-control": "public, max-age=300, s-maxage=43200, stale-while-revalidate=86400" } },
     );
   } catch (error) {
