@@ -22,5 +22,6 @@ test("server-renders Tarkov Raid Planner", async () => {
   assert.match(html,/SHARE PLAN/i);
   assert.match(html,/OPTIMIZE ROUTE/i);
   assert.match(html,/SIGN IN TO SYNC/i);
+  assert.match(html,/FIRETEAM · REV/i);
   assert.doesNotMatch(html,/codex-preview|SkeletonPreview|Your site is taking shape/i);
 });

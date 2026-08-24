@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type ApiObjective = { id:string; description:string; type:string; count:number|null; coordinateStatus:"verify"|"unmapped"|"verified"; maps:{id:string;name:string}[] };
 type ApiTask = { id:string; name:string; trader:{id:string;name:string}|null; objectives:ApiObjective[] };
 type Task = { id:string; title:string; trader:string; objective:string; zone:string; x:number; y:number; status:"READY"|"UNMAPPED"|"VERIFY"; color:string; selected:boolean };
-type StoredPlan = { map:string; selectedTaskIds:string[]; routeTaskIds:string[]; shareId:string };
+type SquadMember = {userId?:string;displayName:string;role:string;ready:boolean;lastSeenAt?:string};
+type StoredPlan = { map:string; selectedTaskIds:string[]; routeTaskIds:string[]; shareId:string;revision:number;members:SquadMember[] };
 
 const initialTasks: Task[] = [
   { id:"demo-1",title:"Checking",trader:"Prapor",objective:"Machinery keyを回収し、Bronze pocket watchを確保",zone:"Customs",x:42,y:37,status:"READY",color:"#d7ff45",selected:true },
@@ -19,10 +20,10 @@ function position(id:string,index:number) { let hash=0; for (const char of id) h
 function savedIds(key:string) { try { const value=JSON.parse(localStorage.getItem(key)??"[]"); return new Set<string>(Array.isArray(value)?value:[]); } catch { return new Set<string>(); } }
 function sharedIds() { try { return new Set(decodeURIComponent(window.location.hash.replace(/^#tasks=/,"" )).split(",").filter(Boolean)); } catch { return new Set<string>(); } }
 
-const squad = [
-  { name:"GO825",role:"LEADER",tasks:3,ready:true,initials:"G8" },
-  { name:"KUMA",role:"ASSAULT",tasks:2,ready:true,initials:"KM" },
-  { name:"NOVA",role:"SUPPORT",tasks:1,ready:false,initials:"NV" },
+const initialSquad:SquadMember[] = [
+  { displayName:"GO825",role:"LEADER",ready:true },
+  { displayName:"KUMA",role:"ASSAULT",ready:true },
+  { displayName:"NOVA",role:"SUPPORT",ready:false },
 ];
 
 function Icon({ name }: { name:"grid"|"target"|"map"|"users"|"settings"|"plus"|"route"|"share" }) {
@@ -49,6 +50,11 @@ export default function Home() {
   const [shareId,setShareId] = useState("");
   const [syncMode,setSyncMode] = useState<"LOCAL"|"CLOUD"|"SHARED">("LOCAL");
   const [syncReady,setSyncReady] = useState(false);
+  const [revision,setRevision] = useState(0);
+  const revisionRef=useRef(0);
+  const applyingRemote=useRef(false);
+  const [canEdit,setCanEdit] = useState(true);
+  const [squad,setSquad] = useState(initialSquad);
   const [activeNav,setActiveNav] = useState("Raid plan");
   const [copied,setCopied] = useState(false);
   const [mode,setMode] = useState<"PLAN"|"LIVE">("PLAN");
@@ -90,7 +96,7 @@ export default function Home() {
           return [{id,title:task.name,trader:task.trader?.name ?? "Unknown",objective:objective.description,zone:map,...visual,status:objective.coordinateStatus==="unmapped"?"UNMAPPED":objective.coordinateStatus==="verified"?"READY":"VERIFY",selected:restoredIds.size?restoredIds.has(id):index<3}];
         });
         if(cloudPlan?.routeTaskIds.length){const order=new Map(cloudPlan.routeTaskIds.map((id,index)=>[id,index]));next=[...next].sort((a,b)=>(order.get(a.id)??9999)-(order.get(b.id)??9999))}
-        setTasks(next); setShareId(cloudPlan?.shareId??""); setSyncMode(share?"SHARED":cloudPlan?"CLOUD":"LOCAL"); setSyncReady(true); setUpdatedAt(payload.meta?.fetchedAt ?? ""); setLoading(false);
+        setTasks(next); setShareId(cloudPlan?.shareId??""); revisionRef.current=cloudPlan?.revision??0; setRevision(revisionRef.current); setSquad(cloudPlan?.members??initialSquad); setCanEdit(!share); setSyncMode(share?"SHARED":cloudPlan?"CLOUD":"LOCAL"); setSyncReady(true); setUpdatedAt(payload.meta?.fetchedAt ?? ""); setLoading(false);
       })
       .catch((reason) => { if (reason.name!=="AbortError") { setError("データを取得できませんでした。デモデータを表示しています。"); setTasks(initialTasks); setLoading(false); } });
     return () => controller.abort();
@@ -98,7 +104,9 @@ export default function Home() {
 
   useEffect(() => { const requested=new URLSearchParams(window.location.search).get("map"); if(!requested||!maps.includes(requested)) return; const timer=window.setTimeout(()=>{setSyncReady(false);setLoading(true);setMap(requested)},0); return ()=>window.clearTimeout(timer); },[]);
   useEffect(() => { if(loading) return; localStorage.setItem(`trp-plan:${map}`,JSON.stringify(tasks.filter((task)=>task.selected).map((task)=>task.id))); const show=window.setTimeout(()=>setSaved(true),0); const hide=window.setTimeout(()=>setSaved(false),900); return ()=>{window.clearTimeout(show);window.clearTimeout(hide)}; },[tasks,loading,map]);
-  useEffect(() => { if(!syncReady||syncMode==="SHARED") return; const timer=window.setTimeout(async()=>{const route=tasks.filter((task)=>task.selected).map((task)=>task.id);try{const response=await fetch("/api/plans",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({map,selectedTaskIds:route,routeTaskIds:route})});if(response.ok){const payload=await response.json();setShareId(payload.plan.shareId);setSyncMode("CLOUD")}}catch{setSyncMode("LOCAL")}},700);return()=>window.clearTimeout(timer)},[tasks,map,syncReady,syncMode]);
+  useEffect(() => { if(applyingRemote.current){applyingRemote.current=false;return}if(!syncReady||(syncMode==="SHARED"&&!canEdit)) return; const timer=window.setTimeout(async()=>{const route=tasks.filter((task)=>task.selected).map((task)=>task.id);try{const response=await fetch("/api/plans",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({map,selectedTaskIds:route,routeTaskIds:route,shareId:syncMode==="SHARED"?shareId:undefined,revision:revisionRef.current})});const payload=await response.json();if(response.ok){setShareId(payload.plan.shareId);revisionRef.current=payload.plan.revision;setRevision(revisionRef.current);setSquad(payload.plan.members);if(syncMode!=="SHARED")setSyncMode("CLOUD")}else if(response.status===409){revisionRef.current=payload.plan.revision;setRevision(revisionRef.current)}}catch{if(syncMode!=="SHARED")setSyncMode("LOCAL")}},700);return()=>window.clearTimeout(timer)},[tasks,map,syncReady,syncMode,canEdit,shareId]);
+  useEffect(()=>{if(syncMode!=="SHARED"||!shareId)return;const poll=window.setInterval(async()=>{const response=await fetch(`/api/plans?share=${encodeURIComponent(shareId)}`);if(!response.ok)return;const {plan}=await response.json() as {plan:StoredPlan};setSquad(plan.members);if(plan.revision===revisionRef.current)return;revisionRef.current=plan.revision;setRevision(plan.revision);const order=new Map(plan.routeTaskIds.map((id,index)=>[id,index]));applyingRemote.current=true;setTasks((items)=>[...items.map((task)=>({...task,selected:plan.selectedTaskIds.includes(task.id)}))].sort((a,b)=>(order.get(a.id)??9999)-(order.get(b.id)??9999)))},4000);return()=>window.clearInterval(poll)},[syncMode,shareId]);
+  const joinSquad=async()=>{if(!shareId)return;const response=await fetch("/api/plans/join",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({shareId})});if(response.status===401){window.location.href=`/signin-with-chatgpt?return_to=${encodeURIComponent(window.location.pathname+window.location.search)}`;return}if(response.ok)setCanEdit(true)};
 
   return <main className="app-shell">
     <aside className="sidebar">
@@ -133,7 +141,7 @@ export default function Home() {
         </button>{task.selected&&<span className="route-order"><button onClick={()=>moveTask(task.id,-1)} aria-label={`${task.title}を前へ`}>↑</button><button onClick={()=>moveTask(task.id,1)} aria-label={`${task.title}を後へ`}>↓</button></span>}</div>)}{!loading&&visibleTasks.length===0&&<div className="empty-state">条件に一致するタスクはありません</div>}</div><button className="optimize" disabled={selected.length<2} onClick={optimizeRoute}><Icon name="route"/>OPTIMIZE ROUTE<span>↗</span></button></aside>
       </div>
 
-      <section className="squad-strip panel"><div className="squad-label"><p className="eyebrow">FIRETEAM</p><h2>Squad status</h2></div>{squad.map((member) => <div className="member" key={member.name}><span className={member.ready?"avatar ready":"avatar"}>{member.initials}</span><div><b>{member.name}</b><small>{member.role} · {member.tasks} TASK{member.tasks>1?"S":""}</small></div><i className={member.ready?"signal online":"signal"}>{member.ready?"READY":"PREP"}</i></div>)}<button className="invite"><Icon name="plus"/>INVITE</button></section>
+      <section className="squad-strip panel"><div className="squad-label"><p className="eyebrow">FIRETEAM · REV {revision}</p><h2>Squad status</h2></div>{squad.slice(0,3).map((member) => <div className="member" key={member.userId??member.displayName}><span className={member.ready?"avatar ready":"avatar"}>{member.displayName.split(/\s|@/).filter(Boolean).slice(0,2).map((part)=>part[0]).join("").toUpperCase()}</span><div><b>{member.displayName}</b><small>{member.role} · {member.lastSeenAt?"SYNCED":"LOCAL"}</small></div><i className={member.ready?"signal online":"signal"}>{member.ready?"READY":"PREP"}</i></div>)}<button className="invite" onClick={syncMode==="SHARED"&&!canEdit?joinSquad:share}><Icon name="plus"/>{syncMode==="SHARED"&&!canEdit?"JOIN":"INVITE"}</button></section>
       <footer><span>DATA SOURCE: TARKOV.DEV · {updatedAt?`UPDATED ${new Date(updatedAt).toLocaleString("ja-JP")}`:"LOCAL FALLBACK"}</span><span>UNOFFICIAL ESCAPE FROM TARKOV PLANNING TOOL</span></footer>
     </section>
   </main>;
