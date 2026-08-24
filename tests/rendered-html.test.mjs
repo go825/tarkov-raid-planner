@@ -23,10 +23,8 @@ test("server-renders Tarkov Raid Planner", async () => {
   assert.match(html,/タスク・Trader・目標を検索/i);
   assert.match(html,/ルートを最適化/i);
   assert.match(html,/ログインして同期/i);
-  assert.match(html,/分隊 · 更新/i);
-  assert.match(html,/分隊ステータス/i);
-  assert.match(html,/レイド前チェックリスト/i);
-  assert.match(html,/分隊の準備状況/i);
+  assert.doesNotMatch(html,/分隊ステータス/i);
+  assert.doesNotMatch(html,/レイド前チェックリスト/i);
   assert.match(html,/100/);
   assert.match(html,/操作可能なマップ/i);
   assert.match(html,/危険地点/i);
