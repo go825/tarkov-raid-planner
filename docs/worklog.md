@@ -102,7 +102,7 @@
 - Sites v5を本番へデプロイし、`DB`バインディングと`raid_plans`テーブルを確認。
 - 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
-### Phase 6 — Ready・権限管理・競合解決（進行中）
+### Phase 6 — Ready・権限管理・競合解決（完了）
 
 - [x] Leaderを含むReady状態のD1保存を実装。
 - [x] Squad画面からReadyを切り替える操作を追加。
@@ -112,7 +112,7 @@
 - [x] Squad版を採用／ローカル版を再送する解決操作を追加。
 - [x] 表示中2秒・バックグラウンド10秒の適応型同期へ改善。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] D1マイグレーションを含む公開サイト更新。
+- [x] D1マイグレーションを含む公開サイト更新。
 
 #### Phase 6 メモ
 
@@ -121,6 +121,8 @@
 - バックグラウンド時のポーリングを抑え、不要な通信とD1読み取りを削減する。
 - ESLintエラー0件、本番ビルド成功、自動テスト4件成功。
 - 未ログインのReady更新／メンバー削除APIがともにHTTP 401になることを統合確認。
+- Sites v7を本番へデプロイし、Leader Ready用マイグレーションを適用。
+- 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
 ### Phase 5 — Squad共同編集（完了）
 
