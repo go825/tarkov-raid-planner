@@ -102,7 +102,7 @@
 - Sites v5を本番へデプロイし、`DB`バインディングと`raid_plans`テーブルを確認。
 - 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
-### Phase 10 — レイド前チェックリスト（進行中）
+### Phase 10 — レイド前チェックリスト（完了）
 
 - [x] タスクObjectiveから鍵・装備・納品・レイド内行動を抽出。
 - [x] プレイヤーレベルと所持鍵を考慮したREADY／MISSING／IN RAID判定を追加。
@@ -110,13 +110,15 @@
 - [x] メンバー別の準備進捗表示を追加。
 - [x] 完了状態・担当割り当て・プレイヤーレベルのD1保存を実装。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] D1マイグレーションを含む公開サイト更新。
+- [x] D1マイグレーションを含む公開サイト更新。
 
 #### Phase 10 メモ
 
 - Objectiveの翻訳済み説明をチェック項目名に利用し、未解決のアイテムIDを画面へ露出しない。
 - 手動完了は自動判定より優先し、共有プランのrevision競合検知対象として保存する。
 - ESLintエラー0件、本番ビルド成功、自動テスト10件成功。
+- Sites v11を本番へデプロイし、D1の`player_profiles`・`raid_plans`マイグレーション適用を確認。
+- 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
 ### Phase 7 — 実座標投影・階層・ルート距離（完了）
 
