@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type ApiObjective = { id:string; description:string; type:string; count:number|null; coordinateStatus:"verify"|"unmapped"|"verified"; maps:{id:string;name:string}[] };
 type ApiTask = { id:string; name:string; trader:{id:string;name:string}|null; objectives:ApiObjective[] };
 type Task = { id:string; title:string; trader:string; objective:string; zone:string; x:number; y:number; status:"READY"|"UNMAPPED"|"VERIFY"; color:string; selected:boolean };
+type StoredPlan = { map:string; selectedTaskIds:string[]; routeTaskIds:string[]; shareId:string };
 
 const initialTasks: Task[] = [
   { id:"demo-1",title:"Checking",trader:"Prapor",objective:"Machinery keyを回収し、Bronze pocket watchを確保",zone:"Customs",x:42,y:37,status:"READY",color:"#d7ff45",selected:true },
@@ -45,6 +46,9 @@ export default function Home() {
   const [error,setError] = useState("");
   const [updatedAt,setUpdatedAt] = useState("");
   const [saved,setSaved] = useState(false);
+  const [shareId,setShareId] = useState("");
+  const [syncMode,setSyncMode] = useState<"LOCAL"|"CLOUD"|"SHARED">("LOCAL");
+  const [syncReady,setSyncReady] = useState(false);
   const [activeNav,setActiveNav] = useState("Raid plan");
   const [copied,setCopied] = useState(false);
   const [mode,setMode] = useState<"PLAN"|"LIVE">("PLAN");
@@ -52,7 +56,8 @@ export default function Home() {
   const visibleTasks = useMemo(() => { const term=query.trim().toLowerCase(); return term ? tasks.filter((task) => `${task.title} ${task.trader} ${task.objective}`.toLowerCase().includes(term)) : tasks; },[tasks,query]);
   const toggleTask = (id:string) => setTasks((items) => items.map((item) => item.id === id ? {...item,selected:!item.selected} : item));
   const share = async () => {
-    const url=new URL(window.location.href); url.searchParams.set("map",map); url.hash=`tasks=${encodeURIComponent(selected.map((task)=>task.id).join(","))}`;
+    const url=new URL(window.location.href); url.hash="";
+    if(shareId){url.search="";url.searchParams.set("share",shareId)}else{url.searchParams.set("map",map);url.hash=`tasks=${encodeURIComponent(selected.map((task)=>task.id).join(","))}`}
     window.history.replaceState(null,"",url); await navigator.clipboard?.writeText(url.toString()); setCopied(true); window.setTimeout(() => setCopied(false),1800);
   };
   const newPlan = () => { setTasks((items)=>items.map((task)=>({...task,selected:false}))); setQuery(""); window.history.replaceState(null,"",window.location.pathname); };
@@ -70,24 +75,30 @@ export default function Home() {
     const controller = new AbortController();
     fetch(`/api/tarkov/tasks?lang=ja&map=${encodeURIComponent(map)}&limit=120`,{signal:controller.signal})
       .then(async (response) => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); })
-      .then((payload) => {
+      .then(async (payload) => {
         const shared=sharedIds(); const stored=savedIds(`trp-plan:${map}`);
-        const restoredIds=shared.size?shared:stored;
-        const next:Task[] = (payload.data as ApiTask[]).flatMap((task,index) => {
+        const share=new URLSearchParams(window.location.search).get("share");
+        let cloudPlan:StoredPlan|null=null;
+        try { const response=await fetch(share?`/api/plans?share=${encodeURIComponent(share)}`:`/api/plans?map=${encodeURIComponent(map)}`,{signal:controller.signal}); if(response.ok) cloudPlan=(await response.json()).plan; } catch { cloudPlan=null; }
+        if(cloudPlan?.map&&cloudPlan.map!==map){setSyncReady(false);setLoading(true);setMap(cloudPlan.map);return}
+        const restoredIds=cloudPlan?new Set(cloudPlan.selectedTaskIds):shared.size?shared:stored;
+        let next:Task[] = (payload.data as ApiTask[]).flatMap((task,index) => {
           const objective=task.objectives.find((item) => item.maps.some((entry) => entry.name.toLowerCase()===map.toLowerCase())) ?? task.objectives[0];
           if (!objective) return [];
           const visual=position(objective.id,index);
           const id=`${task.id}:${objective.id}`;
           return [{id,title:task.name,trader:task.trader?.name ?? "Unknown",objective:objective.description,zone:map,...visual,status:objective.coordinateStatus==="unmapped"?"UNMAPPED":objective.coordinateStatus==="verified"?"READY":"VERIFY",selected:restoredIds.size?restoredIds.has(id):index<3}];
         });
-        setTasks(next); setUpdatedAt(payload.meta?.fetchedAt ?? ""); setLoading(false);
+        if(cloudPlan?.routeTaskIds.length){const order=new Map(cloudPlan.routeTaskIds.map((id,index)=>[id,index]));next=[...next].sort((a,b)=>(order.get(a.id)??9999)-(order.get(b.id)??9999))}
+        setTasks(next); setShareId(cloudPlan?.shareId??""); setSyncMode(share?"SHARED":cloudPlan?"CLOUD":"LOCAL"); setSyncReady(true); setUpdatedAt(payload.meta?.fetchedAt ?? ""); setLoading(false);
       })
       .catch((reason) => { if (reason.name!=="AbortError") { setError("データを取得できませんでした。デモデータを表示しています。"); setTasks(initialTasks); setLoading(false); } });
     return () => controller.abort();
   },[map]);
 
-  useEffect(() => { const requested=new URLSearchParams(window.location.search).get("map"); if(!requested||!maps.includes(requested)) return; const timer=window.setTimeout(()=>{setLoading(true);setMap(requested)},0); return ()=>window.clearTimeout(timer); },[]);
+  useEffect(() => { const requested=new URLSearchParams(window.location.search).get("map"); if(!requested||!maps.includes(requested)) return; const timer=window.setTimeout(()=>{setSyncReady(false);setLoading(true);setMap(requested)},0); return ()=>window.clearTimeout(timer); },[]);
   useEffect(() => { if(loading) return; localStorage.setItem(`trp-plan:${map}`,JSON.stringify(tasks.filter((task)=>task.selected).map((task)=>task.id))); const show=window.setTimeout(()=>setSaved(true),0); const hide=window.setTimeout(()=>setSaved(false),900); return ()=>{window.clearTimeout(show);window.clearTimeout(hide)}; },[tasks,loading,map]);
+  useEffect(() => { if(!syncReady||syncMode==="SHARED") return; const timer=window.setTimeout(async()=>{const route=tasks.filter((task)=>task.selected).map((task)=>task.id);try{const response=await fetch("/api/plans",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({map,selectedTaskIds:route,routeTaskIds:route})});if(response.ok){const payload=await response.json();setShareId(payload.plan.shareId);setSyncMode("CLOUD")}}catch{setSyncMode("LOCAL")}},700);return()=>window.clearTimeout(timer)},[tasks,map,syncReady,syncMode]);
 
   return <main className="app-shell">
     <aside className="sidebar">
@@ -95,12 +106,12 @@ export default function Home() {
       <nav aria-label="Main navigation">{[
         {label:"Overview",icon:"grid"},{label:"My tasks",icon:"target"},{label:"Raid plan",icon:"map"},{label:"Party",icon:"users"}
       ].map((item) => <button key={item.label} className={activeNav===item.label?"nav-item active":"nav-item"} onClick={() => setActiveNav(item.label)}><Icon name={item.icon as "grid"}/><span>{item.label}</span>{item.label==="Raid plan"&&<i>3</i>}</button>)}</nav>
-      <div className="sidebar-foot"><button className="nav-item"><Icon name="settings"/><span>Settings</span></button><div className="profile"><span>G8</span><div><b>GO825</b><small>Level 24 · USEC</small></div><em>•••</em></div></div>
+      <div className="sidebar-foot"><a className="sync-auth" href={syncMode==="LOCAL"?"/signin-with-chatgpt?return_to=%2F":"/signout-with-chatgpt?return_to=%2F"}>{syncMode==="LOCAL"?"SIGN IN TO SYNC":"CLOUD SYNC ACTIVE"}</a><button className="nav-item"><Icon name="settings"/><span>Settings</span></button><div className="profile"><span>G8</span><div><b>GO825</b><small>{syncMode} PLAN · USEC</small></div><em>•••</em></div></div>
     </aside>
 
     <section className="workspace">
       <header className="topbar"><div><p className="eyebrow">OPERATION / {map.toUpperCase()}</p><h1>Raid plan <span>01</span></h1></div><div className="top-actions">
-        <label className="map-select"><span>MAP</span><select value={map} onChange={(event) => {setLoading(true);setError("");setMap(event.target.value)}}>{maps.map((name) => <option key={name}>{name}</option>)}</select></label>
+        <label className="map-select"><span>MAP</span><select value={map} onChange={(event) => {setSyncReady(false);setLoading(true);setError("");setMap(event.target.value)}}>{maps.map((name) => <option key={name}>{name}</option>)}</select></label>
         <div className="mode-switch"><button className={mode==="PLAN"?"on":""} onClick={() => setMode("PLAN")}>PLAN</button><button className={mode==="LIVE"?"live on":"live"} onClick={() => setMode("LIVE")}>LIVE</button></div>
         <button className="button secondary" onClick={share}><Icon name="share"/>{copied?"COPIED":"SHARE PLAN"}</button><button className="button primary" onClick={newPlan}><Icon name="plus"/>NEW PLAN</button>
       </div></header>
@@ -117,7 +128,7 @@ export default function Home() {
           {selected.map((task,index) => <button key={task.id} className="map-pin" style={{left:`${task.x}%`,top:`${task.y}%`,"--pin":task.color} as React.CSSProperties} title={task.title}><span>{index+1}</span><label>{task.title}</label></button>)}
           <div className="extract"><i/><span>EXTRACT<br/><b>Crossroads</b></span></div><div className="map-legend"><span><i className="dot task-dot"/>OBJECTIVE</span><span><i className="dot extract-dot"/>EXTRACT</span><span><i className="line-dot"/>ROUTE</span></div>
         </div></section>
-        <aside className="task-panel panel"><div className="panel-head"><div><p className="eyebrow">OBJECTIVES {saved&&"· SAVED"}</p><h2>Task stack</h2></div><span className="task-count">{visibleTasks.length}</span></div><div className="task-search"><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="タスク・Trader・目標を検索" aria-label="タスク検索"/><span>⌕</span></div><div className="task-list">{visibleTasks.map((task) => <div key={task.id} className={task.selected?"task-card selected":"task-card"}><button className="task-main" onClick={() => toggleTask(task.id)}>
+        <aside className="task-panel panel"><div className="panel-head"><div><p className="eyebrow">OBJECTIVES · {syncMode} {saved&&"· SAVED"}</p><h2>Task stack</h2></div><span className="task-count">{visibleTasks.length}</span></div><div className="task-search"><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="タスク・Trader・目標を検索" aria-label="タスク検索"/><span>⌕</span></div><div className="task-list">{visibleTasks.map((task) => <div key={task.id} className={task.selected?"task-card selected":"task-card"}><button className="task-main" onClick={() => toggleTask(task.id)}>
           <span className="task-index" style={{borderColor:task.color,color:task.color}}>{task.selected?selected.findIndex((t) => t.id===task.id)+1:"—"}</span><span className="task-copy"><small>{task.trader} · {task.zone}</small><b>{task.title}</b><em>{task.objective}</em></span><span className={`status ${task.status.toLowerCase()}`}>{task.status}</span><span className={task.selected?"check checked":"check"}>✓</span>
         </button>{task.selected&&<span className="route-order"><button onClick={()=>moveTask(task.id,-1)} aria-label={`${task.title}を前へ`}>↑</button><button onClick={()=>moveTask(task.id,1)} aria-label={`${task.title}を後へ`}>↓</button></span>}</div>)}{!loading&&visibleTasks.length===0&&<div className="empty-state">条件に一致するタスクはありません</div>}</div><button className="optimize" disabled={selected.length<2} onClick={optimizeRoute}><Icon name="route"/>OPTIMIZE ROUTE<span>↗</span></button></aside>
       </div>
