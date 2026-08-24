@@ -22,7 +22,7 @@
 - [x] キャッシュと障害時の古いデータへのフォールバックを実装。
 - [x] アプリ内APIエンドポイントを追加。
 - [x] 自動テストと本番ビルドで検証。
-- [ ] 公開サイトを更新。
+- [x] 公開サイトを更新。
 
 #### Phase 1 方針
 
@@ -39,3 +39,4 @@
 - レスポンスへ `fetchedAt`、`stale`、`overlayVersion`、各Objectiveの `coordinateStatus` を付与。
 - 自動テスト4件が成功。既存トップページのサーバーレンダリングも回帰なし。
 - 実データ統合確認: HTTP 200、regular 519タスク、overlay v1.69。
+- Sites v2を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
