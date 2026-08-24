@@ -6,7 +6,7 @@ Tarkov Raid Planner（TRP）は、レイド前にタスクとObjectiveを地図�
 
 - tarkov.dev実データによるMap別Objective表示
 - Zoom／Pan／Floor切替とObjective詳細
-- Spawn・Extract・Lock・Hazardを含むルート計画
+- CC BY-NC-SA 4.0コミュニティSVG地図とSpawn・Extract・Lock・Hazardを含むルート計画
 - タスク選択、ルート最適化、レイド前チェックリスト
 - ChatGPT認証、クラウド保存、共有Squad共同編集
 - Ready・担当割り当て・競合解決
@@ -39,3 +39,5 @@ npm run dev
 ## 注意
 
 This is an unofficial Escape from Tarkov planning tool and is not affiliated with Battlestate Games.
+
+地図画像は`the-hideout/tarkov-dev-svg-maps`をCC BY-NC-SA 4.0で使用しています。この地図を含む状態では非商用運用に限定されます。詳細は`public/maps/ATTRIBUTION.md`を参照してください。

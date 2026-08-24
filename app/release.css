@@ -19,3 +19,6 @@
 .planner-grid{grid-template-columns:minmax(340px,.72fr) minmax(520px,1.55fr)}.planner-grid .task-panel{grid-column:1;grid-row:1;order:1}.planner-grid .map-panel{grid-column:2;grid-row:1;order:2}
 @media(max-width:1050px){.planner-grid{grid-template-columns:1fr}.planner-grid .task-panel{grid-column:1;grid-row:1}.planner-grid .map-panel{grid-column:1;grid-row:2}}
 @media(max-width:720px){.planner-grid .task-panel{order:1}.planner-grid .map-panel{order:2}}
+
+/* Phase 21: licensed community map artwork */
+.map-art{position:absolute!important;inset:0;width:100%!important;height:100%!important;object-fit:fill;z-index:1;opacity:.88;filter:saturate(.72) brightness(.72) contrast(1.16)}.has-map-art .terrain,.has-map-art .road{display:none}.has-map-art:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(5,8,6,.08),rgba(5,8,6,.2));box-shadow:inset 0 0 60px rgba(0,0,0,.35)}.has-map-art .route-svg,.has-map-art .world-marker,.has-map-art .map-pin,.has-map-art .map-legend,.has-map-art .zone-label{z-index:3}

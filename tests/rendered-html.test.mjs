@@ -16,6 +16,7 @@ test("server-renders Tarkov Raid Planner", async () => {
   assert.match(html,/<title>Tarkov Raid Planner<\/title>/i);
   assert.match(html,/レイド計画/i);
   assert.match(html,/戦術マップ・座標表示/i);
+  assert.match(html,/\/maps\/Customs\.svg/i);
   assert.match(html,/タスク一覧/i);
   assert.match(html,/タスク・Trader・目標を検索/i);
   assert.match(html,/ルートを最適化/i);
