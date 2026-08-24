@@ -41,7 +41,7 @@
 - 実データ統合確認: HTTP 200、regular 519タスク、overlay v1.69。
 - Sites v2を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
-### Phase 2 — 実データUI接続（進行中）
+### Phase 2 — 実データUI接続（完了）
 
 - [x] Phase 1 APIをRaid Planner画面へ接続。
 - [x] マップ選択と再取得を実装。
@@ -49,7 +49,7 @@
 - [x] タスク選択とルート候補表示を実データへ対応。
 - [x] 読み込み中・取得失敗・検索結果なしの状態を追加。
 - [x] 自動テストと本番ビルドで検証。
-- [ ] 公開サイトを更新。
+- [x] 公開サイトを更新。
 
 #### Phase 2 メモ
 
@@ -58,3 +58,4 @@
 - `coordinateStatus` が `unmapped` のObjectiveを画面上で明示し、座標未収録を正常系として扱う。
 - 自動テスト4件が成功。本番ビルド成功。
 - Customs絞り込みの実データ統合確認: HTTP 200、80タスク、stale=false。
+- Sites v3を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
