@@ -1,0 +1,1 @@
+ALTER TABLE `raid_plans` ADD `owner_ready` integer DEFAULT false NOT NULL;

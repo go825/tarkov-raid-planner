@@ -9,6 +9,7 @@ export const raidPlans = sqliteTable("raid_plans", {
   routeTaskIds: text("route_task_ids").notNull().default("[]"),
   shareId: text("share_id").notNull(),
   ownerName: text("owner_name").notNull().default("Owner"),
+  ownerReady: integer("owner_ready", {mode:"boolean"}).notNull().default(false),
   revision: integer("revision").notNull().default(1),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
