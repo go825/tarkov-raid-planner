@@ -2,7 +2,7 @@ import { applyTaskOverlay, normalizeTasks, translateTree, values } from "./core.
 
 export type GameMode = "regular" | "pve" | "pvp-season";
 export type NormalizedTask = { objectives:Array<{maps:Array<{id:string;name:string}>}>;[key:string]:unknown };
-export type TarkovMap = {id:string;name:string;spawns:Array<{position:unknown;zoneName?:string}>;extracts:Array<{id:string;name:string;position:unknown}>};
+export type TarkovMap = {id:string;name:string;spawns:Array<{position:unknown;zoneName?:string}>;extracts:Array<{id:string;name:string;position:unknown}>;locks:Array<{id:string;lockType:string;key?:string;needsPower?:boolean;position:unknown}>;hazards:Array<{id:string;hazardType:string;name?:string;position:unknown}>};
 
 type CacheEntry = { fetchedAt: string; expiresAt: number; payload: TarkovPayload };
 export type TarkovPayload = {
@@ -34,7 +34,7 @@ async function load(mode: GameMode, locale: string): Promise<TarkovPayload> {
   const mergedTasks = applyTaskOverlay(translatedTasks, overlay, mode, locale);
   return {
     tasks: normalizeTasks(mergedTasks, translatedMaps) as NormalizedTask[],
-    maps: values(translatedMaps).map((value)=>{const map=value as TarkovMap;return{id:map.id,name:map.name,spawns:map.spawns??[],extracts:map.extracts??[]}}),
+    maps: values(translatedMaps).map((value)=>{const map=value as TarkovMap;return{id:map.id,name:map.name,spawns:map.spawns??[],extracts:map.extracts??[],locks:map.locks??[],hazards:map.hazards??[]}}),
     meta: { mode, locale, fetchedAt: new Date().toISOString(), stale: false, overlayVersion: overlay?.$meta?.version ?? null },
   };
 }

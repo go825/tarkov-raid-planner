@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { boundsFor, distance3d, floorFor, objectivePoint, projectPoint, worldPoint, type WorldPoint } from "@/lib/planner/projection.mjs";
+import { boundsFor, distance3d, floorFor, hazardWeightedDistance, objectivePoint, projectPoint, worldPoint, type WorldPoint } from "@/lib/planner/projection.mjs";
 
 type ApiObjective = { id:string; description:string; type:string; count:number|null; coordinateStatus:"verify"|"unmapped"|"verified"; maps:{id:string;name:string}[];possibleLocations?:unknown[];zones?:unknown[] };
 type ApiTask = { id:string; name:string; trader:{id:string;name:string}|null; objectives:ApiObjective[] };
-type ApiMap={spawns:Array<{position:unknown;zoneName?:string}>;extracts:Array<{id:string;name:string;position:unknown}>};
+type ApiMap={spawns:Array<{position:unknown;zoneName?:string}>;extracts:Array<{id:string;name:string;position:unknown}>;locks:Array<{id:string;lockType:string;key?:string;needsPower?:boolean;position:unknown}>;hazards:Array<{id:string;hazardType:string;name?:string;position:unknown}>};
 type ApiPayload={data:ApiTask[];map:ApiMap|null;meta:{fetchedAt?:string}};
 type SourceMarker={id:string;name:string;point:WorldPoint};
 type Task = { id:string; title:string; trader:string; objective:string; zone:string; x:number; y:number; world:WorldPoint|null;floor:"B1"|"GROUND"|"UPPER";status:"READY"|"UNMAPPED"|"VERIFY"; color:string; selected:boolean };
-type TacticalMarker={id:string;name:string;x:number;y:number;floor:"B1"|"GROUND"|"UPPER"};
+type TacticalMarker={id:string;name:string;x:number;y:number;floor:"B1"|"GROUND"|"UPPER";world:WorldPoint};
 type SquadMember = {userId?:string;displayName:string;role:string;ready:boolean;lastSeenAt?:string};
 type StoredPlan = { map:string; selectedTaskIds:string[]; routeTaskIds:string[]; shareId:string;revision:number;members:SquadMember[];ownerUserId:string;currentUserId:string|null };
 
@@ -65,13 +65,19 @@ export default function Home() {
   const [conflict,setConflict] = useState<StoredPlan|null>(null);
   const [floor,setFloor] = useState<"ALL"|"B1"|"GROUND"|"UPPER">("ALL");
   const [markers,setMarkers] = useState<{spawns:TacticalMarker[];extracts:TacticalMarker[]}>({spawns:[],extracts:[]});
+  const [hazards,setHazards] = useState<TacticalMarker[]>([]);
+  const [locks,setLocks] = useState<TacticalMarker[]>([]);
+  const [spawnId,setSpawnId] = useState("");
+  const [extractId,setExtractId] = useState("");
   const [activeNav,setActiveNav] = useState("Raid plan");
   const [copied,setCopied] = useState(false);
   const [mode,setMode] = useState<"PLAN"|"LIVE">("PLAN");
   const selected = useMemo(() => tasks.filter((task) => task.selected),[tasks]);
   const currentMember=squad.find((member)=>member.userId===currentUserId);
   const isOwner=Boolean(currentUserId&&currentUserId===ownerUserId);
-  const routeMeters=useMemo(()=>selected.slice(1).reduce((total,task,index)=>total+(task.world&&selected[index].world?distance3d(selected[index].world!,task.world):0),0),[selected]);
+  const chosenSpawn=markers.spawns.find((marker)=>marker.id===spawnId)??null;
+  const chosenExtract=markers.extracts.find((marker)=>marker.id===extractId)??null;
+  const routeMeters=useMemo(()=>{const points=[chosenSpawn?.world,...selected.map((task)=>task.world),chosenExtract?.world].filter((point):point is WorldPoint=>Boolean(point));return points.slice(1).reduce((total,point,index)=>total+distance3d(points[index],point),0)},[selected,chosenSpawn,chosenExtract]);
   const visibleTasks = useMemo(() => { const term=query.trim().toLowerCase(); return term ? tasks.filter((task) => `${task.title} ${task.trader} ${task.objective}`.toLowerCase().includes(term)) : tasks; },[tasks,query]);
   const toggleTask = (id:string) => setTasks((items) => items.map((item) => item.id === id ? {...item,selected:!item.selected} : item));
   const share = async () => {
@@ -85,8 +91,8 @@ export default function Home() {
     [route[from],route[to]]=[route[to],route[from]]; const positions=items.map((task,index)=>task.selected?index:-1).filter((index)=>index>=0); const next=[...items]; positions.forEach((position,index)=>{next[position]=route[index]}); return next;
   });
   const optimizeRoute = () => setTasks((items) => {
-    const pending=[...items.filter((task)=>task.selected)]; if (pending.length<2) return items; const route=[pending.shift()!];
-    while (pending.length) { const last=route.at(-1)!; let best=0; for(let index=1;index<pending.length;index++){ const distance=(task:Task)=>last.world&&task.world?distance3d(last.world,task.world):(task.x-last.x)**2+(task.y-last.y)**2; if(distance(pending[index])<distance(pending[best])) best=index; } route.push(pending.splice(best,1)[0]); }
+    const pending=[...items.filter((task)=>task.selected)]; if (pending.length<2) return items; const route:Task[]=[];let current=chosenSpawn?.world??pending[0].world;
+    while (pending.length) { let best=0; for(let index=1;index<pending.length;index++){ const cost=(task:Task)=>current&&task.world?hazardWeightedDistance(current,task.world,hazards.map((hazard)=>hazard.world)):(task.x-(route.at(-1)?.x??0))**2+(task.y-(route.at(-1)?.y??0))**2; if(cost(pending[index])<cost(pending[best])) best=index; } const next=pending.splice(best,1)[0];route.push(next);current=next.world??current; }
     const positions=items.map((task,index)=>task.selected?index:-1).filter((index)=>index>=0); const next=[...items]; positions.forEach((position,index)=>{next[position]=route[index]}); return next;
   });
 
@@ -110,10 +116,13 @@ export default function Home() {
         });
         const spawnSource=(payload.map?.spawns??[]).map((entry,index):SourceMarker|null=>{const point=worldPoint(entry.position);return point?{id:`spawn-${index}`,name:entry.zoneName??"SPAWN",point}:null}).filter((entry):entry is SourceMarker=>entry!==null).slice(0,16);
         const extractSource=(payload.map?.extracts??[]).map((entry):SourceMarker|null=>{const point=worldPoint(entry.position);return point?{id:entry.id,name:entry.name,point}:null}).filter((entry):entry is SourceMarker=>entry!==null);
-        const projectionBounds=boundsFor([...next.map((task)=>task.world),...spawnSource.map((entry)=>entry.point),...extractSource.map((entry)=>entry.point)]);
+        const hazardSource=(payload.map?.hazards??[]).map((entry):SourceMarker|null=>{const point=worldPoint(entry.position);return point?{id:entry.id,name:entry.hazardType??entry.name??"HAZARD",point}:null}).filter((entry):entry is SourceMarker=>entry!==null);
+        const lockSource=(payload.map?.locks??[]).map((entry):SourceMarker|null=>{const point=worldPoint(entry.position);return point?{id:entry.id,name:entry.needsPower?"POWER":entry.key?"KEY":"LOCK",point}:null}).filter((entry):entry is SourceMarker=>entry!==null);
+        const projectionBounds=boundsFor([...next.map((task)=>task.world),...spawnSource.map((entry)=>entry.point),...extractSource.map((entry)=>entry.point),...hazardSource.map((entry)=>entry.point),...lockSource.map((entry)=>entry.point)]);
         next=next.map((task)=>task.world?{...task,...projectPoint(task.world,projectionBounds)}:task);
-        const marker=(entry:SourceMarker):TacticalMarker=>({...projectPoint(entry.point,projectionBounds),id:entry.id,name:entry.name,floor:floorFor(entry.point)});
-        setMarkers({spawns:spawnSource.map(marker),extracts:extractSource.map(marker)});
+        const marker=(entry:SourceMarker):TacticalMarker=>({...projectPoint(entry.point,projectionBounds),id:entry.id,name:entry.name,floor:floorFor(entry.point),world:entry.point});
+        const projectedSpawns=spawnSource.map(marker),projectedExtracts=extractSource.map(marker);
+        setMarkers({spawns:projectedSpawns,extracts:projectedExtracts});setHazards(hazardSource.map(marker));setLocks(lockSource.map(marker));setSpawnId(projectedSpawns[0]?.id??"");setExtractId(projectedExtracts[0]?.id??"");
         if(cloudPlan?.routeTaskIds.length){const order=new Map(cloudPlan.routeTaskIds.map((id,index)=>[id,index]));next=[...next].sort((a,b)=>(order.get(a.id)??9999)-(order.get(b.id)??9999))}
         setTasks(next); setShareId(cloudPlan?.shareId??""); revisionRef.current=cloudPlan?.revision??0; setRevision(revisionRef.current); setSquad(cloudPlan?.members??initialSquad); setOwnerUserId(cloudPlan?.ownerUserId??""); setCurrentUserId(cloudPlan?.currentUserId??""); setCanEdit(!share); setSyncMode(share?"SHARED":cloudPlan?"CLOUD":"LOCAL"); setSyncReady(true); setUpdatedAt(payload.meta?.fetchedAt ?? ""); setLoading(false);
       })
@@ -155,11 +164,13 @@ export default function Home() {
       {conflict&&<div className="conflict-alert" role="alert"><div><b>PLAN UPDATED BY SQUAD</b><span>別のメンバーが先に更新しました。使用する内容を選択してください。</span></div><button onClick={useRemoteConflict}>USE SQUAD VERSION</button><button onClick={keepLocalConflict}>KEEP MY VERSION</button></div>}
       <div className="planner-grid"><section className="map-panel panel"><div className="panel-head"><div><p className="eyebrow">TACTICAL OVERVIEW · WORLD COORDS</p><h2>{map} route</h2></div><div className="floor-tools">{(["ALL","B1","GROUND","UPPER"] as const).map((level)=><button key={level} className={floor===level?"on":""} onClick={()=>setFloor(level)}>{level}</button>)}</div></div>
         <div className="map-canvas" aria-label="Customs tactical map"><div className="terrain terrain-a"/><div className="terrain terrain-b"/><div className="terrain terrain-c"/><div className="road road-main"/><div className="road road-cross"/>
-          <span className="zone-label z1">WEST</span><span className="zone-label z2">NORTH</span><span className="zone-label z3">SOUTH</span><span className="zone-label z4">EAST</span><svg className="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points={selected.filter((task)=>floor==="ALL"||task.floor===floor).map((task)=>`${task.x},${task.y}`).join(" ")}/></svg>
-          {markers.spawns.filter((marker)=>floor==="ALL"||marker.floor===floor).slice(0,8).map((marker)=><span key={marker.id} className="world-marker spawn-marker" style={{left:`${marker.x}%`,top:`${marker.y}%`}} title={marker.name}>S</span>)}
-          {markers.extracts.filter((marker)=>floor==="ALL"||marker.floor===floor).map((marker)=><span key={marker.id} className="world-marker extract-marker" style={{left:`${marker.x}%`,top:`${marker.y}%`}} title={marker.name}>E</span>)}
+          <span className="zone-label z1">WEST</span><span className="zone-label z2">NORTH</span><span className="zone-label z3">SOUTH</span><span className="zone-label z4">EAST</span><svg className="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><polyline points={[chosenSpawn,...selected,chosenExtract].filter((entry):entry is TacticalMarker|Task=>Boolean(entry)&&(floor==="ALL"||entry.floor===floor)).map((entry)=>`${entry.x},${entry.y}`).join(" ")}/></svg>
+          {hazards.filter((marker)=>floor==="ALL"||marker.floor===floor).map((marker)=><span key={marker.id} className="world-marker hazard-marker" style={{left:`${marker.x}%`,top:`${marker.y}%`}} title={marker.name}>!</span>)}
+          {locks.filter((marker)=>floor==="ALL"||marker.floor===floor).slice(0,24).map((marker)=><span key={marker.id} className="world-marker lock-marker" style={{left:`${marker.x}%`,top:`${marker.y}%`}} title={marker.name}>K</span>)}
+          {markers.spawns.filter((marker)=>floor==="ALL"||marker.floor===floor).slice(0,8).map((marker)=><button key={marker.id} className={marker.id===spawnId?"world-marker spawn-marker chosen":"world-marker spawn-marker"} style={{left:`${marker.x}%`,top:`${marker.y}%`}} title={`Spawn: ${marker.name}`} onClick={()=>setSpawnId(marker.id)}>S</button>)}
+          {markers.extracts.filter((marker)=>floor==="ALL"||marker.floor===floor).map((marker)=><button key={marker.id} className={marker.id===extractId?"world-marker extract-marker chosen":"world-marker extract-marker"} style={{left:`${marker.x}%`,top:`${marker.y}%`}} title={`Extract: ${marker.name}`} onClick={()=>setExtractId(marker.id)}>E</button>)}
           {selected.filter((task)=>floor==="ALL"||task.floor===floor).map((task) => <button key={task.id} className="map-pin" style={{left:`${task.x}%`,top:`${task.y}%`,"--pin":task.color} as React.CSSProperties} title={`${task.title} · ${task.floor}`}><span>{selected.findIndex((entry)=>entry.id===task.id)+1}</span><label>{task.title}<small>{task.floor}</small></label></button>)}
-          <div className="map-legend"><span><i className="dot task-dot"/>OBJECTIVE</span><span><i className="dot spawn-dot"/>SPAWN</span><span><i className="dot extract-dot"/>EXTRACT</span><span><i className="line-dot"/>ROUTE</span></div>
+          <div className="map-legend"><span><i className="dot task-dot"/>OBJECTIVE</span><span><i className="dot spawn-dot"/>SPAWN</span><span><i className="dot extract-dot"/>EXTRACT</span><span><i className="dot hazard-dot"/>DANGER</span><span><i className="dot lock-dot"/>LOCK</span></div>
         </div></section>
         <aside className="task-panel panel"><div className="panel-head"><div><p className="eyebrow">OBJECTIVES · {syncMode} {saved&&"· SAVED"}</p><h2>Task stack</h2></div><span className="task-count">{visibleTasks.length}</span></div><div className="task-search"><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="タスク・Trader・目標を検索" aria-label="タスク検索"/><span>⌕</span></div><div className="task-list">{visibleTasks.map((task) => <div key={task.id} className={task.selected?"task-card selected":"task-card"}><button className="task-main" onClick={() => toggleTask(task.id)}>
           <span className="task-index" style={{borderColor:task.color,color:task.color}}>{task.selected?selected.findIndex((t) => t.id===task.id)+1:"—"}</span><span className="task-copy"><small>{task.trader} · {task.zone}</small><b>{task.title}</b><em>{task.objective}</em></span><span className={`status ${task.status.toLowerCase()}`}>{task.status}</span><span className={task.selected?"check checked":"check"}>✓</span>

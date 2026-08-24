@@ -5,3 +5,4 @@ export function boundsFor(points:(WorldPoint|null)[],padding?:number):{minX:numb
 export function projectPoint(point:WorldPoint,bounds:{minX:number;maxX:number;minZ:number;maxZ:number}):{x:number;y:number};
 export function floorFor(point:WorldPoint):"B1"|"GROUND"|"UPPER";
 export function distance3d(a:WorldPoint,b:WorldPoint):number;
+export function hazardWeightedDistance(a:WorldPoint,b:WorldPoint,hazards?:WorldPoint[],radius?:number):number;
