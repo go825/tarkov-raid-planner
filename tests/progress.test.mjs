@@ -9,8 +9,9 @@ test("locks tasks by level and incomplete prerequisites",()=>{
 });
 
 test("raid candidates require active tasks and unfinished objectives once tracking starts",()=>{
+  assert.equal(isRaidCandidate({sourceTaskId:"task",objectiveId:"objective"},{},{}),false);
   const task={sourceTaskId:"task",objectiveId:"objective"};
-  assert.equal(isRaidCandidate(task,{},{}),true);
+  assert.equal(isRaidCandidate(task,{},{}),false);
   assert.equal(isRaidCandidate(task,{task:"available"},{}),false);
   assert.equal(isRaidCandidate(task,{task:"active"},{objective:"completed"}),false);
   assert.equal(isRaidCandidate(task,{task:"active"},{objective:"in_progress"}),true);
