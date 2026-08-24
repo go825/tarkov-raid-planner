@@ -102,7 +102,7 @@
 - Sites v5を本番へデプロイし、`DB`バインディングと`raid_plans`テーブルを確認。
 - 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
-### Phase 7 — 実座標投影・階層・ルート距離（進行中）
+### Phase 7 — 実座標投影・階層・ルート距離（完了）
 
 - [x] Tarkovワールド座標の抽出処理を実装。
 - [x] マップ別boundsを動的計算し、x/zを画面座標へ投影。
@@ -112,7 +112,7 @@
 - [x] 選択Objective間の3D距離を推定ルート距離へ反映。
 - [x] ルート最適化を実座標距離優先へ変更。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] 公開サイトを更新。
+- [x] 公開サイトを更新。
 
 #### Phase 7 メモ
 
@@ -121,6 +121,7 @@
 - 高度yが-2未満をB1、6超をUPPER、それ以外をGROUNDとして暫定分類する。
 - ESLintエラー0件、本番ビルド成功、自動テスト7件成功。
 - Customs実データ統合確認: 80タスク、278 Spawn、27 Extract、座標付きタスク43件。
+- Sites v8を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
 ### Phase 6 — Ready・権限管理・競合解決（完了）
 
