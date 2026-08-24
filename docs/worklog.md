@@ -4,7 +4,7 @@
 
 ## 2026-08-24
 
-### Phase 13 — Party Dashboard・分隊タスク統合（進行中）
+### Phase 13 — Party Dashboard・分隊タスク統合（完了）
 
 - [x] Party専用画面とメンバー別進行状況を追加。
 - [x] 同一Objectiveの複数所有者を統合。
@@ -13,7 +13,7 @@
 - [x] メンバーカラーと実準備率を表示。
 - [x] Party参加者だけが進行情報を取得できるAPIを追加。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] GitHubと公開サイトを更新。
+- [x] GitHubと公開サイトを更新。
 
 #### Phase 13 メモ
 
@@ -22,6 +22,8 @@
 - Map効率スコアは`Objective数 + 対象メンバー数 × 2`。Any Map Objectiveは各具体Mapの候補へ加算する。
 - CREATE PLANは推薦Mapへ切り替え、Party対象Objectiveを初期選択して既存ルート・チェックリストへ接続する。
 - ESLintエラー0件、本番ビルド成功、自動テスト15件成功。
+- Sites v14を本番へデプロイ。
+- 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
 ### Phase 12 — My Tasks・タスク進行管理（完了）
 
