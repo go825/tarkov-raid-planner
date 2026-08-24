@@ -4,6 +4,24 @@
 
 ## 2026-08-24
 
+### Phase 12 — My Tasks・タスク進行管理（進行中）
+
+- [x] My Tasks画面とPvP／PvE切替を追加。
+- [x] Task／Objective進行状態をD1とlocalStorageへ保存。
+- [x] 前提Task・必要LevelによるLOCKED判定を追加。
+- [x] 受注中・未完了ObjectiveだけをRaid Plan候補へ反映。
+- [x] Squad共有プラン上でTask所有者と担当者を区別。
+- [x] 自動テスト・Lint・本番ビルドで検証。
+- [ ] GitHubと公開サイトを更新。
+
+#### Phase 12 メモ
+
+- ゲーム状態は自動取得せず、ユーザーの手動入力のみ。認証時はD1、未ログイン時はモード別localStorageへ保存する。
+- TaskはAVAILABLE／ACTIVE／COMPLETED、ObjectiveはPENDING／IN PROGRESS／HANDOVER／COMPLETEDで管理する。
+- 進行管理を開始するまでは従来どおり全候補を表示し、開始後はACTIVEかつ未完了ObjectiveだけをRaid Planへ出す。
+- 共有プランのTask所有者はObjective単位で保持し、チェックリストの作業担当とは別フィールドで同期する。
+- ESLintエラー0件、本番ビルド成功、自動テスト14件成功。
+
 ### Phase 11 — Phase 0仕様差分の解消（完了・外部確認ゲートあり）
 
 - [x] Phase 0指定成果物6ファイルを`docs/research/`へ作成。

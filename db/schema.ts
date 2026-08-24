@@ -13,6 +13,7 @@ export const raidPlans = sqliteTable("raid_plans", {
   revision: integer("revision").notNull().default(1),
   checklistState: text("checklist_state").notNull().default("{}"),
   assignments: text("assignments").notNull().default("{}"),
+  taskOwners: text("task_owners").notNull().default("{}"),
   createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
@@ -39,3 +40,11 @@ export const playerProfiles = sqliteTable("player_profiles", {
   allowConditionalExtracts: integer("allow_conditional_extracts", {mode:"boolean"}).notNull().default(false),
   updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const taskProgress = sqliteTable("task_progress", {
+  userId: text("user_id").notNull(),
+  gameMode: text("game_mode").notNull().default("regular"),
+  taskStates: text("task_states").notNull().default("{}"),
+  objectiveStates: text("objective_states").notNull().default("{}"),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [primaryKey({columns:[table.userId,table.gameMode]})]);

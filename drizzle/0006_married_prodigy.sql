@@ -1,0 +1,1 @@
+ALTER TABLE `raid_plans` ADD `task_owners` text DEFAULT '{}' NOT NULL;

@@ -36,6 +36,20 @@
       "when": 1787544315221,
       "tag": "0004_loose_puma",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1787547805402,
+      "tag": "0005_tired_norman_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787548196748,
+      "tag": "0006_married_prodigy",
+      "breakpoints": true
     }
   ]
 }
