@@ -1,0 +1,8 @@
+import { eq } from "drizzle-orm";
+import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { getDb } from "@/db";
+import { planMembers, playerProfiles, raidPlans, taskProgress } from "@/db/schema";
+
+export async function GET(){const user=await getChatGPTUser();if(!user)return Response.json({error:"Authentication required"},{status:401});const db=getDb();const [profile,progress,plans,memberships]=await Promise.all([db.select().from(playerProfiles).where(eq(playerProfiles.userId,user.userId)),db.select().from(taskProgress).where(eq(taskProgress.userId,user.userId)),db.select().from(raidPlans).where(eq(raidPlans.userId,user.userId)),db.select().from(planMembers).where(eq(planMembers.userId,user.userId))]);return Response.json({exportedAt:new Date().toISOString(),account:{displayName:user.displayName,email:user.email},profile,progress,plans,memberships},{headers:{"content-disposition":"attachment; filename=tarkov-raid-planner-data.json","cache-control":"no-store"}})}
+
+export async function DELETE(request:Request){const user=await getChatGPTUser();if(!user)return Response.json({error:"Authentication required"},{status:401});const {confirmation}=await request.json() as {confirmation?:string};if(confirmation!=="DELETE")return Response.json({error:"Type DELETE to confirm"},{status:400});const db=getDb();await db.delete(planMembers).where(eq(planMembers.userId,user.userId));await db.delete(taskProgress).where(eq(taskProgress.userId,user.userId));await db.delete(playerProfiles).where(eq(playerProfiles.userId,user.userId));await db.delete(raidPlans).where(eq(raidPlans.userId,user.userId));return new Response(null,{status:204})}
