@@ -13,7 +13,7 @@
 - [x] 担当Squadメンバーの色をObjectiveマーカーへ反映。
 - [x] 前提タスク情報を正規化データへ保持。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] GitHubと公開サイトを更新。
+- [x] GitHubと公開サイトを更新。
 
 #### Phase 11 外部確認ゲート
 
@@ -26,6 +26,8 @@
 - Map絞り込み後もタスク内の該当Objectiveをすべて個別表示し、Mapなし納品Objectiveはチェックリスト専用として扱う。
 - Customs統合確認: 対象124 Task、Any Objective 59件、複数Map Objective 67件、前提Taskあり54件。
 - ESLintエラー0件、本番ビルド成功、自動テスト12件成功。
+- GitHubコミット`ca74926`をSites v12として本番デプロイ。
+- 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
 ### Phase 0 — データ調査・ライセンス確認（完了）
 
