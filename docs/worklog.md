@@ -144,7 +144,7 @@
 - Customs実データ統合確認: 34 Lock、5 Hazard、278 Spawn、27 Extract。
 - Sites v9を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
-### Phase 9 — プレイヤープロファイル・実行可能ルート（進行中）
+### Phase 9 — プレイヤープロファイル・実行可能ルート（完了）
 
 - [x] Faction・所持鍵・電源・条件付きExtract設定のプロファイルを追加。
 - [x] 認証ユーザー向けD1プロファイルAPIを実装。
@@ -154,7 +154,7 @@
 - [x] Faction／条件設定によるExtract利用可否を表示。
 - [x] 利用不可Extractをルート終点から除外。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] D1マイグレーションを含む公開サイト更新。
+- [x] D1マイグレーションを含む公開サイト更新。
 
 #### Phase 9 メモ
 
@@ -163,6 +163,8 @@
 - 条件付きExtractは明示的に許可した場合だけ選択可能にする安全側の判定。
 - ESLintエラー0件、本番ビルド成功、自動テスト8件成功。
 - 未ログインProfile APIはHTTP 401。Customsで鍵付きLock 34件、条件付きExtract 1件を確認。
+- Sites v10を本番へデプロイし、D1の`player_profiles`テーブルを確認。
+- 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
 ### Phase 6 — Ready・権限管理・競合解決（完了）
 
