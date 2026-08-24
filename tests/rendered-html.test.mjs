@@ -15,7 +15,9 @@ test("server-renders Tarkov Raid Planner", async () => {
   const html = await response.text();
   assert.match(html,/<title>Tarkov Raid Planner<\/title>/i);
   assert.match(html,/Raid plan/i);
-  assert.match(html,/Customs route/i);
+  assert.match(html,/TACTICAL OVERVIEW/i);
+  assert.match(html,/<select>[\s\S]*Customs[\s\S]*Factory[\s\S]*<\/select>/i);
   assert.match(html,/Task stack/i);
+  assert.match(html,/タスク・Trader・目標を検索/i);
   assert.doesNotMatch(html,/codex-preview|SkeletonPreview|Your site is taking shape/i);
 });

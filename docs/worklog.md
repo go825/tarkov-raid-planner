@@ -13,7 +13,7 @@
 - 調査資料を `docs/phase-0-research.md`、監査処理を `scripts/audit-tarkov-data.mjs` に保存。
 - GitHub反映: `f896a23 Complete Phase 0 data and licensing research`
 
-### Phase 1 — データ基盤（進行中）
+### Phase 1 — データ基盤（完了）
 
 - [x] Phase 1の実装範囲を決定。
 - [x] Tarkov静的JSONの取得サービスを実装。
@@ -40,3 +40,21 @@
 - 自動テスト4件が成功。既存トップページのサーバーレンダリングも回帰なし。
 - 実データ統合確認: HTTP 200、regular 519タスク、overlay v1.69。
 - Sites v2を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
+
+### Phase 2 — 実データUI接続（進行中）
+
+- [x] Phase 1 APIをRaid Planner画面へ接続。
+- [x] マップ選択と再取得を実装。
+- [x] タスク名・Trader・Objectiveの検索を実装。
+- [x] タスク選択とルート候補表示を実データへ対応。
+- [x] 読み込み中・取得失敗・検索結果なしの状態を追加。
+- [x] 自動テストと本番ビルドで検証。
+- [ ] 公開サイトを更新。
+
+#### Phase 2 メモ
+
+- 権利確認前の地図画像は使わず、既存の抽象タクティカルマップを維持。
+- ワールド座標から画面座標への正式な投影定義は未確定のため、現段階のピン配置はUI確認用の決定的な仮配置。
+- `coordinateStatus` が `unmapped` のObjectiveを画面上で明示し、座標未収録を正常系として扱う。
+- 自動テスト4件が成功。本番ビルド成功。
+- Customs絞り込みの実データ統合確認: HTTP 200、80タスク、stale=false。

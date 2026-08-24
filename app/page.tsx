@@ -1,15 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-type Task = { id:number; title:string; trader:string; objective:string; zone:string; x:number; y:number; status:"READY"|"BLOCKED"|"VERIFY"; color:string; selected:boolean };
+type ApiObjective = { id:string; description:string; type:string; count:number|null; coordinateStatus:"verify"|"unmapped"|"verified"; maps:{id:string;name:string}[] };
+type ApiTask = { id:string; name:string; trader:{id:string;name:string}|null; objectives:ApiObjective[] };
+type Task = { id:string; title:string; trader:string; objective:string; zone:string; x:number; y:number; status:"READY"|"UNMAPPED"|"VERIFY"; color:string; selected:boolean };
 
 const initialTasks: Task[] = [
-  { id:1,title:"Checking",trader:"Prapor",objective:"Machinery keyを回収し、Bronze pocket watchを確保",zone:"Dorms → Construction",x:42,y:37,status:"READY",color:"#d7ff45",selected:true },
-  { id:2,title:"Delivery from the Past",trader:"Prapor",objective:"Customs officeでsecure caseを回収",zone:"Big Red",x:17,y:55,status:"READY",color:"#ffb547",selected:true },
-  { id:3,title:"The Extortionist",trader:"Skier",objective:"Unknown keyでmessengerの荷物を回収",zone:"RUAF Roadblock",x:63,y:65,status:"VERIFY",color:"#7dd8ff",selected:true },
-  { id:4,title:"Bad Rep Evidence",trader:"Prapor",objective:"Portable bunkhouse keyが必要",zone:"Factory Shacks",x:71,y:41,status:"BLOCKED",color:"#f47458",selected:false },
+  { id:"demo-1",title:"Checking",trader:"Prapor",objective:"Machinery keyを回収し、Bronze pocket watchを確保",zone:"Customs",x:42,y:37,status:"READY",color:"#d7ff45",selected:true },
+  { id:"demo-2",title:"Delivery from the Past",trader:"Prapor",objective:"Customs officeでsecure caseを回収",zone:"Customs",x:17,y:55,status:"READY",color:"#ffb547",selected:true },
+  { id:"demo-3",title:"The Extortionist",trader:"Skier",objective:"Unknown keyでmessengerの荷物を回収",zone:"Customs",x:63,y:65,status:"VERIFY",color:"#7dd8ff",selected:true },
 ];
+
+const maps = ["Customs","Factory","Woods","Shoreline","Interchange","Reserve","Lighthouse","Streets of Tarkov","Ground Zero","The Lab"];
+const colors = ["#d7ff45","#ffb547","#7dd8ff","#f47458","#c6a7ff","#7fffc1"];
+function position(id:string,index:number) { let hash=0; for (const char of id) hash=(hash*31+char.charCodeAt(0))>>>0; return {x:12+(hash%73),y:18+((hash>>>8)%65),color:colors[index%colors.length]}; }
 
 const squad = [
   { name:"GO825",role:"LEADER",tasks:3,ready:true,initials:"G8" },
@@ -32,12 +37,36 @@ function Icon({ name }: { name:"grid"|"target"|"map"|"users"|"settings"|"plus"|"
 
 export default function Home() {
   const [tasks,setTasks] = useState(initialTasks);
+  const [map,setMap] = useState("Customs");
+  const [query,setQuery] = useState("");
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState("");
+  const [updatedAt,setUpdatedAt] = useState("");
   const [activeNav,setActiveNav] = useState("Raid plan");
   const [copied,setCopied] = useState(false);
   const [mode,setMode] = useState<"PLAN"|"LIVE">("PLAN");
   const selected = useMemo(() => tasks.filter((task) => task.selected),[tasks]);
-  const toggleTask = (id:number) => setTasks((items) => items.map((item) => item.id === id ? {...item,selected:!item.selected} : item));
+  const visibleTasks = useMemo(() => { const term=query.trim().toLowerCase(); return term ? tasks.filter((task) => `${task.title} ${task.trader} ${task.objective}`.toLowerCase().includes(term)) : tasks; },[tasks,query]);
+  const toggleTask = (id:string) => setTasks((items) => items.map((item) => item.id === id ? {...item,selected:!item.selected} : item));
   const share = async () => { await navigator.clipboard?.writeText("TRP-CUSTOMS-042"); setCopied(true); window.setTimeout(() => setCopied(false),1800); };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true); setError("");
+    fetch(`/api/tarkov/tasks?lang=ja&map=${encodeURIComponent(map)}&limit=120`,{signal:controller.signal})
+      .then(async (response) => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); })
+      .then((payload) => {
+        const next:Task[] = (payload.data as ApiTask[]).flatMap((task,index) => {
+          const objective=task.objectives.find((item) => item.maps.some((entry) => entry.name.toLowerCase()===map.toLowerCase())) ?? task.objectives[0];
+          if (!objective) return [];
+          const visual=position(objective.id,index);
+          return [{id:`${task.id}:${objective.id}`,title:task.name,trader:task.trader?.name ?? "Unknown",objective:objective.description,zone:map,...visual,status:objective.coordinateStatus==="unmapped"?"UNMAPPED":objective.coordinateStatus==="verified"?"READY":"VERIFY",selected:index<3}];
+        });
+        setTasks(next); setUpdatedAt(payload.meta?.fetchedAt ?? ""); setLoading(false);
+      })
+      .catch((reason) => { if (reason.name!=="AbortError") { setError("データを取得できませんでした。デモデータを表示しています。"); setTasks(initialTasks); setLoading(false); } });
+    return () => controller.abort();
+  },[map]);
 
   return <main className="app-shell">
     <aside className="sidebar">
@@ -49,29 +78,31 @@ export default function Home() {
     </aside>
 
     <section className="workspace">
-      <header className="topbar"><div><p className="eyebrow">OPERATION / CUSTOMS</p><h1>Raid plan <span>01</span></h1></div><div className="top-actions">
+      <header className="topbar"><div><p className="eyebrow">OPERATION / {map.toUpperCase()}</p><h1>Raid plan <span>01</span></h1></div><div className="top-actions">
+        <label className="map-select"><span>MAP</span><select value={map} onChange={(event) => setMap(event.target.value)}>{maps.map((name) => <option key={name}>{name}</option>)}</select></label>
         <div className="mode-switch"><button className={mode==="PLAN"?"on":""} onClick={() => setMode("PLAN")}>PLAN</button><button className={mode==="LIVE"?"live on":"live"} onClick={() => setMode("LIVE")}>LIVE</button></div>
         <button className="button secondary" onClick={share}><Icon name="share"/>{copied?"COPIED":"SHARE PLAN"}</button><button className="button primary"><Icon name="plus"/>NEW PLAN</button>
       </div></header>
 
-      <section className="raid-summary"><div className="map-title"><span className="map-code">CU</span><div><p>CUSTOMS</p><small>13:28 — 15:28 · Cloudy · 18°C</small></div></div>
-        <div className="summary-stat"><small>SELECTED TASKS</small><strong>{selected.length}<span> / 4</span></strong></div><div className="summary-stat"><small>EST. ROUTE</small><strong>2.4<span> km</span></strong></div><div className="summary-stat"><small>SQUAD</small><strong>3<span> / 5</span></strong></div>
+      <section className="raid-summary"><div className="map-title"><span className="map-code">{map.slice(0,2).toUpperCase()}</span><div><p>{map.toUpperCase()}</p><small>{loading?"SYNCING TARKOV DATA…":`${tasks.length} AVAILABLE OBJECTIVES`}</small></div></div>
+        <div className="summary-stat"><small>SELECTED TASKS</small><strong>{selected.length}<span> / {tasks.length}</span></strong></div><div className="summary-stat"><small>MAPPED</small><strong>{tasks.filter((task)=>task.status!=="UNMAPPED").length}<span> points</span></strong></div><div className="summary-stat"><small>SQUAD</small><strong>3<span> / 5</span></strong></div>
         <button className="deploy"><span></span>{mode==="LIVE"?"RAID IN PROGRESS":"READY TO DEPLOY"}</button>
       </section>
 
-      <div className="planner-grid"><section className="map-panel panel"><div className="panel-head"><div><p className="eyebrow">TACTICAL OVERVIEW</p><h2>Customs route</h2></div><div className="map-tools"><button>−</button><b>72%</b><button>＋</button></div></div>
+      {error&&<div className="data-alert" role="status">{error}</div>}
+      <div className="planner-grid"><section className="map-panel panel"><div className="panel-head"><div><p className="eyebrow">TACTICAL OVERVIEW</p><h2>{map} route</h2></div><div className="map-tools"><button>−</button><b>72%</b><button>＋</button></div></div>
         <div className="map-canvas" aria-label="Customs tactical map"><div className="terrain terrain-a"/><div className="terrain terrain-b"/><div className="terrain terrain-c"/><div className="road road-main"/><div className="road road-cross"/>
           <span className="zone-label z1">BIG RED</span><span className="zone-label z2">DORMS</span><span className="zone-label z3">CONSTRUCTION</span><span className="zone-label z4">RUAF</span><div className="route-line"/><div className="spawn"><i/><span>SPAWN</span></div>
           {selected.map((task,index) => <button key={task.id} className="map-pin" style={{left:`${task.x}%`,top:`${task.y}%`,"--pin":task.color} as React.CSSProperties} title={task.title}><span>{index+1}</span><label>{task.title}</label></button>)}
           <div className="extract"><i/><span>EXTRACT<br/><b>Crossroads</b></span></div><div className="map-legend"><span><i className="dot task-dot"/>OBJECTIVE</span><span><i className="dot extract-dot"/>EXTRACT</span><span><i className="line-dot"/>ROUTE</span></div>
         </div></section>
-        <aside className="task-panel panel"><div className="panel-head"><div><p className="eyebrow">OBJECTIVES</p><h2>Task stack</h2></div><button className="icon-button"><Icon name="plus"/></button></div><div className="task-list">{tasks.map((task) => <button key={task.id} className={task.selected?"task-card selected":"task-card"} onClick={() => toggleTask(task.id)}>
+        <aside className="task-panel panel"><div className="panel-head"><div><p className="eyebrow">OBJECTIVES</p><h2>Task stack</h2></div><span className="task-count">{visibleTasks.length}</span></div><div className="task-search"><input value={query} onChange={(event)=>setQuery(event.target.value)} placeholder="タスク・Trader・目標を検索" aria-label="タスク検索"/><span>⌕</span></div><div className="task-list">{visibleTasks.map((task) => <button key={task.id} className={task.selected?"task-card selected":"task-card"} onClick={() => toggleTask(task.id)}>
           <span className="task-index" style={{borderColor:task.color,color:task.color}}>{task.selected?selected.findIndex((t) => t.id===task.id)+1:"—"}</span><span className="task-copy"><small>{task.trader} · {task.zone}</small><b>{task.title}</b><em>{task.objective}</em></span><span className={`status ${task.status.toLowerCase()}`}>{task.status}</span><span className={task.selected?"check checked":"check"}>✓</span>
-        </button>)}</div><button className="optimize"><Icon name="route"/>OPTIMIZE ROUTE<span>↗</span></button></aside>
+        </button>)}{!loading&&visibleTasks.length===0&&<div className="empty-state">条件に一致するタスクはありません</div>}</div><button className="optimize" disabled={selected.length<2}><Icon name="route"/>OPTIMIZE ROUTE<span>↗</span></button></aside>
       </div>
 
       <section className="squad-strip panel"><div className="squad-label"><p className="eyebrow">FIRETEAM</p><h2>Squad status</h2></div>{squad.map((member) => <div className="member" key={member.name}><span className={member.ready?"avatar ready":"avatar"}>{member.initials}</span><div><b>{member.name}</b><small>{member.role} · {member.tasks} TASK{member.tasks>1?"S":""}</small></div><i className={member.ready?"signal online":"signal"}>{member.ready?"READY":"PREP"}</i></div>)}<button className="invite"><Icon name="plus"/>INVITE</button></section>
-      <footer><span>DATA SOURCE: TARKOV.DEV · UPDATED 12 MIN AGO</span><span>UNOFFICIAL ESCAPE FROM TARKOV PLANNING TOOL</span></footer>
+      <footer><span>DATA SOURCE: TARKOV.DEV · {updatedAt?`UPDATED ${new Date(updatedAt).toLocaleString("ja-JP")}`:"LOCAL FALLBACK"}</span><span>UNOFFICIAL ESCAPE FROM TARKOV PLANNING TOOL</span></footer>
     </section>
   </main>;
 }
