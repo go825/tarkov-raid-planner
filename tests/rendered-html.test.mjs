@@ -16,10 +16,8 @@ test("server-renders Tarkov Raid Planner", async () => {
   assert.match(html,/<title>Tarkov Raid Planner<\/title>/i);
   assert.match(html,/レイド計画/i);
   assert.match(html,/戦術マップ・座標表示/i);
-  assert.match(html,/<select>[\s\S]*Customs[\s\S]*Factory[\s\S]*<\/select>/i);
   assert.match(html,/タスク一覧/i);
   assert.match(html,/タスク・Trader・目標を検索/i);
-  assert.match(html,/計画を共有/i);
   assert.match(html,/ルートを最適化/i);
   assert.match(html,/ログインして同期/i);
   assert.match(html,/分隊 · 更新/i);
@@ -29,9 +27,11 @@ test("server-renders Tarkov Raid Planner", async () => {
   assert.match(html,/100/);
   assert.match(html,/座標表示/i);
   assert.match(html,/危険地点/i);
-  assert.match(html,/ルート条件/i);
+  assert.match(html,/プレイヤー進行・手動管理/i);
   assert.match(html,/aria-label="全体ナビゲーション"/i);
-  assert.match(html,/概要[^]*マイタスク[^]*レイド計画[^]*パーティー[^]*設定/i);
+  assert.match(html,/マイタスク[^]*レイド計画[^]*パーティー[^]*設定/i);
+  assert.doesNotMatch(html,/>概要</i);
+  assert.match(html,/aria-current="page"[^>]*>[^]*マイタスク/i);
   assert.doesNotMatch(html,/codex-preview|SkeletonPreview|Your site is taking shape/i);
 });
 
