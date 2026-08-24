@@ -123,7 +123,7 @@
 - Customs実データ統合確認: 80タスク、278 Spawn、27 Extract、座標付きタスク43件。
 - Sites v8を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
-### Phase 8 — Spawn・Extract・危険度ルーティング（進行中）
+### Phase 8 — Spawn・Extract・危険度ルーティング（完了）
 
 - [x] マップAPIからlocks・hazardsを取得。
 - [x] Spawn地点をマップ上で選択可能に変更。
@@ -133,7 +133,7 @@
 - [x] 開始・終了地点を含む推定距離を表示。
 - [x] Hazard近傍を加重するルート最適化へ更新。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] 公開サイトを更新。
+- [x] 公開サイトを更新。
 
 #### Phase 8 メモ
 
@@ -142,6 +142,7 @@
 - Spawn候補は重複表示を抑えるため先頭16件を投影し、画面上では最大8件を表示する。
 - ESLintエラー0件、本番ビルド成功、自動テスト8件成功。
 - Customs実データ統合確認: 34 Lock、5 Hazard、278 Spawn、27 Extract。
+- Sites v9を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
 ### Phase 6 — Ready・権限管理・競合解決（完了）
 
