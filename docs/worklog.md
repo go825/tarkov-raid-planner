@@ -102,7 +102,7 @@
 - Sites v5を本番へデプロイし、`DB`バインディングと`raid_plans`テーブルを確認。
 - 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
-### Phase 5 — Squad共同編集（進行中）
+### Phase 5 — Squad共同編集（完了）
 
 - [x] 共有プランへの認証付き参加APIを実装。
 - [x] SquadメンバーとReady状態のD1スキーマを追加。
@@ -112,7 +112,7 @@
 - [x] Squad表示をD1メンバー情報へ接続。
 - [x] 共有閲覧者向けJOIN導線を追加。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] D1マイグレーションを含む公開サイト更新。
+- [x] D1マイグレーションを含む公開サイト更新。
 
 #### Phase 5 メモ
 
@@ -121,3 +121,5 @@
 - 共有IDだけでは編集できず、ChatGPT認証後にSquadへ参加したユーザーのみ更新可能。
 - ESLintエラー0件、本番ビルド成功、自動テスト4件成功。
 - 未ログインのプラン取得／Squad参加APIがともにHTTP 401になることを統合確認。
+- Sites v6を本番へデプロイし、D1の`plan_members`・`raid_plans`テーブルを確認。
+- 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
