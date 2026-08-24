@@ -80,7 +80,7 @@
 - ESLintエラー0件、本番ビルド成功、自動テスト4件成功。
 - Sites v4を本番へデプロイ。URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
 
-### Phase 4 — 認証・クラウド同期・永続共有（進行中）
+### Phase 4 — 認証・クラウド同期・永続共有（完了）
 
 - [x] ChatGPT認証ユーザーを保存APIの所有者として利用。
 - [x] D1用`raid_plans`スキーマとマイグレーションを追加。
@@ -90,7 +90,7 @@
 - [x] 未ログイン時のlocalStorageフォールバックを維持。
 - [x] サインイン／クラウド同期状態をUIへ追加。
 - [x] 自動テスト・Lint・本番ビルドで検証。
-- [ ] D1マイグレーションを含む公開サイト更新。
+- [x] D1マイグレーションを含む公開サイト更新。
 
 #### Phase 4 メモ
 
@@ -99,3 +99,5 @@
 - 未ログインまたはクラウド保存を利用できない環境では、Phase 3の端末内保存が継続する。
 - ESLintエラー0件、本番ビルド成功、自動テスト4件成功。
 - 未ログイン保存APIの統合確認: HTTP 401（DB接続前に認証拒否）。
+- Sites v5を本番へデプロイし、`DB`バインディングと`raid_plans`テーブルを確認。
+- 公開URL: `https://tarkov-raid-planner.tipmilkgo5.chatgpt.site`
