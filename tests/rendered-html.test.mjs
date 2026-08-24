@@ -26,6 +26,7 @@ test("server-renders Tarkov Raid Planner", async () => {
   assert.match(html,/Squad status/i);
   assert.match(html,/Pre-raid checklist/i);
   assert.match(html,/Squad readiness/i);
+  assert.match(html,/100/);
   assert.match(html,/WORLD COORDS/i);
   assert.match(html,/DANGER/i);
   assert.match(html,/ROUTE PROFILE/i);

@@ -1,4 +1,5 @@
 import { getTarkovTasks, type GameMode } from "@/lib/tarkov/service";
+import { objectiveMatchesMap } from "@/lib/tarkov/core.mjs";
 
 const MODES = new Set<GameMode>(["regular", "pve", "pvp-season"]);
 const LOCALE_PATTERN = /^[a-z]{2}(?:-[A-Z]{2})?$/;
@@ -17,9 +18,7 @@ export async function GET(request: Request) {
   try {
     const payload = await getTarkovTasks(requestedMode as GameMode, locale);
     const tasks = mapFilter
-      ? payload.tasks.filter((task) => task.objectives.some((objective) =>
-          objective.maps.some((map) => map.id?.toLowerCase() === mapFilter || map.name?.toLowerCase() === mapFilter),
-        ))
+      ? payload.tasks.filter((task) => task.objectives.some((objective) => objectiveMatchesMap(objective, mapFilter)))
       : payload.tasks;
     return Response.json(
       { data: tasks.slice(0, limit), map: mapFilter ? payload.maps.find((entry) => entry.id?.toLowerCase() === mapFilter || entry.name?.toLowerCase() === mapFilter) ?? null : null, meta: { ...payload.meta, total: tasks.length, limit } },

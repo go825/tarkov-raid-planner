@@ -4,6 +4,29 @@
 
 ## 2026-08-24
 
+### Phase 11 — Phase 0仕様差分の解消（完了・外部確認ゲートあり）
+
+- [x] Phase 0指定成果物6ファイルを`docs/research/`へ作成。
+- [x] YES／PARTIAL／NOの13項目評価とGO判定を明文化。
+- [x] Any／複数Map／MapなしObjectiveの分類・絞り込み・テストを追加。
+- [x] Objective詳細表示とZoom／Panを追加。
+- [x] 担当Squadメンバーの色をObjectiveマーカーへ反映。
+- [x] 前提タスク情報を正規化データへ保持。
+- [x] 自動テスト・Lint・本番ビルドで検証。
+- [ ] GitHubと公開サイトを更新。
+
+#### Phase 11 外部確認ゲート
+
+- BSGのファンコンテンツ・商標利用条件は明示的な許諾範囲を追加確認する。
+- 正確な地図アセットは商用利用可能な許諾取得まで本番へ組み込まず、独自抽象マップを継続する。
+
+#### Phase 11 メモ
+
+- Map scopeは`specific`／`multiple`／`any`／`none`へ正規化。上流に明示scopeがないAnyはObjective typeから安全側に推定する。
+- Map絞り込み後もタスク内の該当Objectiveをすべて個別表示し、Mapなし納品Objectiveはチェックリスト専用として扱う。
+- Customs統合確認: 対象124 Task、Any Objective 59件、複数Map Objective 67件、前提Taskあり54件。
+- ESLintエラー0件、本番ビルド成功、自動テスト12件成功。
+
 ### Phase 0 — データ調査・ライセンス確認（完了）
 
 - `json.tarkov.dev` の静的JSONエンドポイントと日本語翻訳データを確認。

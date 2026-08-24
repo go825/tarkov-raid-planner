@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyTaskOverlay, hasCoordinates, translateTree } from "../lib/tarkov/core.mjs";
+import { applyTaskOverlay, hasCoordinates, objectiveMapScope, objectiveMatchesMap, translateTree } from "../lib/tarkov/core.mjs";
 
 test("translations use locale, English fallback, then original key", () => {
   const source = { name: "task.name", objectives: [{ description: "objective.name" }], untouched: "id-1" };
@@ -26,4 +26,18 @@ test("coordinate detection supports positions and zones", () => {
   assert.equal(hasCoordinates({ possibleLocations: [{ positions: [[1, 2, 3]] }] }), true);
   assert.equal(hasCoordinates({ zones: [{ position: { x: 1, y: 2, z: 3 } }] }), true);
   assert.equal(hasCoordinates({ maps: [{ id: "customs" }] }), false);
+});
+
+test("objective map scope distinguishes specific multiple any and none", () => {
+  assert.equal(objectiveMapScope({ type:"visit",maps:[{id:"customs"}] }),"specific");
+  assert.equal(objectiveMapScope({ type:"shoot",maps:[{id:"customs"},{id:"woods"}] }),"multiple");
+  assert.equal(objectiveMapScope({ type:"shoot",maps:[] }),"any");
+  assert.equal(objectiveMapScope({ type:"giveItem",maps:[] }),"none");
+});
+
+test("map matching includes any and matching multiple objectives but excludes none", () => {
+  assert.equal(objectiveMatchesMap({type:"shoot",maps:[]},"customs"),true);
+  assert.equal(objectiveMatchesMap({type:"visit",maps:[{id:"customs"},{id:"woods"}]},"woods"),true);
+  assert.equal(objectiveMatchesMap({type:"visit",maps:[{id:"woods"}]},"customs"),false);
+  assert.equal(objectiveMatchesMap({type:"giveItem",maps:[]},"customs"),false);
 });

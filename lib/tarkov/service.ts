@@ -1,7 +1,7 @@
 import { applyTaskOverlay, normalizeTasks, translateTree, values } from "./core.mjs";
 
 export type GameMode = "regular" | "pve" | "pvp-season";
-export type NormalizedTask = { objectives:Array<{maps:Array<{id:string;name:string}>}>;[key:string]:unknown };
+export type NormalizedTask = { objectives:Array<{maps:Array<{id:string;name:string}>;mapScope:"specific"|"multiple"|"any"|"none"}>;[key:string]:unknown };
 export type TarkovMap = {id:string;name:string;spawns:Array<{position:unknown;zoneName?:string}>;extracts:Array<{id:string;name:string;position:unknown;faction?:string;switches?:string[]}>;locks:Array<{id:string;lockType:string;key?:string;needsPower?:boolean;position:unknown}>;hazards:Array<{id:string;hazardType:string;name?:string;position:unknown}>};
 
 type CacheEntry = { fetchedAt: string; expiresAt: number; payload: TarkovPayload };
