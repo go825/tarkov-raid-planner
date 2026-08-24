@@ -19,5 +19,7 @@ test("server-renders Tarkov Raid Planner", async () => {
   assert.match(html,/<select>[\s\S]*Customs[\s\S]*Factory[\s\S]*<\/select>/i);
   assert.match(html,/Task stack/i);
   assert.match(html,/タスク・Trader・目標を検索/i);
+  assert.match(html,/SHARE PLAN/i);
+  assert.match(html,/OPTIMIZE ROUTE/i);
   assert.doesNotMatch(html,/codex-preview|SkeletonPreview|Your site is taking shape/i);
 });
