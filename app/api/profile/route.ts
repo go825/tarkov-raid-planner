@@ -1,0 +1,9 @@
+import { eq } from "drizzle-orm";
+import { getChatGPTUser } from "@/app/chatgpt-auth";
+import { playerProfiles } from "@/db/schema";
+
+async function database(){const {getDb}=await import("@/db");return getDb()}
+const defaults={faction:"pmc",keyIds:[],allowPowered:false,allowConditionalExtracts:false};
+
+export async function GET(){const user=await getChatGPTUser();if(!user)return Response.json({error:"Authentication required"},{status:401});const db=await database();const [profile]=await db.select().from(playerProfiles).where(eq(playerProfiles.userId,user.userId)).limit(1);return Response.json({profile:profile?{faction:profile.faction,keyIds:JSON.parse(profile.keyIds),allowPowered:profile.allowPowered,allowConditionalExtracts:profile.allowConditionalExtracts}:defaults})}
+export async function PUT(request:Request){const user=await getChatGPTUser();if(!user)return Response.json({error:"Authentication required"},{status:401});const body=await request.json() as {faction?:string;keyIds?:unknown;allowPowered?:boolean;allowConditionalExtracts?:boolean};if(!["pmc","scav"].includes(body.faction??"")||!Array.isArray(body.keyIds))return Response.json({error:"Invalid profile"},{status:400});const keyIds=body.keyIds.filter((id):id is string=>typeof id==="string").slice(0,300);const values={userId:user.userId,faction:body.faction!,keyIds:JSON.stringify(keyIds),allowPowered:Boolean(body.allowPowered),allowConditionalExtracts:Boolean(body.allowConditionalExtracts),updatedAt:new Date().toISOString()};const db=await database();await db.insert(playerProfiles).values(values).onConflictDoUpdate({target:playerProfiles.userId,set:values});return Response.json({profile:{...values,keyIds}})}

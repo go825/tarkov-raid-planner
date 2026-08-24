@@ -27,3 +27,12 @@ export const planMembers = sqliteTable("plan_members", {
   joinedAt: text("joined_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   lastSeenAt: text("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [primaryKey({columns:[table.planId,table.userId]})]);
+
+export const playerProfiles = sqliteTable("player_profiles", {
+  userId: text("user_id").primaryKey(),
+  faction: text("faction").notNull().default("pmc"),
+  keyIds: text("key_ids").notNull().default("[]"),
+  allowPowered: integer("allow_powered", {mode:"boolean"}).notNull().default(false),
+  allowConditionalExtracts: integer("allow_conditional_extracts", {mode:"boolean"}).notNull().default(false),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
