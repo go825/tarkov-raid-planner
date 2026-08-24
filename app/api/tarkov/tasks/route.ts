@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   }
 
   const requestedLimit = Number(url.searchParams.get("limit") ?? 100);
-  const limit = Number.isFinite(requestedLimit) ? Math.min(500, Math.max(1, Math.trunc(requestedLimit))) : 100;
+  const limit = Number.isFinite(requestedLimit) ? Math.min(1000, Math.max(1, Math.trunc(requestedLimit))) : 100;
   const mapFilter = url.searchParams.get("map")?.toLowerCase();
   try {
     const payload = await getTarkovTasks(requestedMode as GameMode, locale);

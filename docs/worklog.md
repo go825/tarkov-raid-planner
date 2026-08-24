@@ -4,6 +4,25 @@
 
 ## 2026-08-24
 
+### Phase 13 — Party Dashboard・分隊タスク統合（進行中）
+
+- [x] Party専用画面とメンバー別進行状況を追加。
+- [x] 同一Objectiveの複数所有者を統合。
+- [x] Map別の分隊Objective効率ランキングを追加。
+- [x] Party DashboardからRaid Planを生成。
+- [x] メンバーカラーと実準備率を表示。
+- [x] Party参加者だけが進行情報を取得できるAPIを追加。
+- [x] 自動テスト・Lint・本番ビルドで検証。
+- [ ] GitHubと公開サイトを更新。
+
+#### Phase 13 メモ
+
+- Party APIは共有IDだけでは取得できず、所有者または参加済みメンバーのChatGPT認証を必須とする。
+- 同一Objective IDを所有者配列へ統合し、メンバーカラーで重複所有を表示する。
+- Map効率スコアは`Objective数 + 対象メンバー数 × 2`。Any Map Objectiveは各具体Mapの候補へ加算する。
+- CREATE PLANは推薦Mapへ切り替え、Party対象Objectiveを初期選択して既存ルート・チェックリストへ接続する。
+- ESLintエラー0件、本番ビルド成功、自動テスト15件成功。
+
 ### Phase 12 — My Tasks・タスク進行管理（完了）
 
 - [x] My Tasks画面とPvP／PvE切替を追加。

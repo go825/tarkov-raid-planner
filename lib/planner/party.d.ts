@@ -1,0 +1,3 @@
+export type PartyProgressMember={userId:string;displayName:string;color:string;ready:boolean;taskStates:Record<string,string>;objectiveStates:Record<string,string>};
+export type PartyObjectiveGroup={id:string;taskId:string;taskName:string;description:string;type:string;mapScope:string;maps:Array<{id:string;name:string}>;owners:Array<{userId:string;displayName:string;color:string}>};
+export function buildPartyDashboard(tasks:any[],members:PartyProgressMember[]):{groups:PartyObjectiveGroup[];recommendations:Array<{map:string;objectiveCount:number;memberCount:number;score:number;objectiveIds:string[]}>};
